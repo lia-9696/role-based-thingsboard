@@ -1,35 +1,38 @@
-import { createContext, useState, useContext } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { auth } from "../firebase";
+import {
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged
+} from "firebase/auth";
 
 const AuthContext = createContext();
 
-function generateToken(username, deviceId) {
-  return btoa(`${username}:${deviceId}:${Date.now()}`);
-}
-
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [recentDevices, setRecentDevices] = useState([]);
 
-  const login = ({ role, deviceId, username }) => {
-    if (!role || !deviceId) return { success: false, message: "Role and Device ID required" };
-
-    const token = generateToken(username || "user", deviceId);
-
-    setUser({ role, deviceId, username, token });
-
-    // Add device to recent devices (max 5)
-    setRecentDevices(prev => {
-      const filtered = prev.filter(d => d.deviceId !== deviceId);
-      return [{ deviceId, role, username }, ...filtered].slice(0, 5);
+  // Track auth user
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
     });
+    return () => unsub();
+  }, []);
 
-    return { success: true };
+  // Login user
+  const login = (email, password) => {
+    return signInWithEmailAndPassword(auth, email, password);
   };
 
-  const logout = () => setUser(null);
+  // Logout user
+  const logout = () => {
+    localStorage.removeItem("role");
+    localStorage.removeItem("deviceId");
+    return signOut(auth);
+  };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, recentDevices }}>
+    <AuthContext.Provider value={{ user, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

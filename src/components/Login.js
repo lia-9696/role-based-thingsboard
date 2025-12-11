@@ -1,116 +1,64 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import { useNavigate, Link } from "react-router-dom";
+
+import "./Auth.css";
 
 const Login = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ role: "", username: "", password: "", deviceId: "" });
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
 
-    const res = login(form.username, form.password, form.role, form.deviceId);
+    try {
+      await login(email, password);
 
-    if (res.success) {
-      // Redirect to dashboard
-      navigate("/dashboard");
-    } else {
-      setError(res.message);
+      const role = localStorage.getItem("role");
+
+      if (role === "farmer") navigate("/farmer-dashboard");
+      else navigate("/master-dashboard");
+      
+    } catch (err) {
+      setError("Invalid Login Credentials");
     }
   };
 
   return (
-    <div
-      style={{
-        height: "100vh",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: "#4CAF50", // green background
-        backgroundImage: "url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1470&q=80')",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
-    >
-      <form
-        onSubmit={handleSubmit}
-        style={{
-          backgroundColor: "rgba(255,255,255,0.9)",
-          padding: 30,
-          borderRadius: 10,
-          boxShadow: "0 0 15px rgba(0,0,0,0.3)",
-          width: 350,
-        }}
-      >
-        <h2 style={{ textAlign: "center", marginBottom: 20 }}>Dashboard Login</h2>
+    <div className="auth-container">
 
-        {/* Role Selection */}
-        <label>Role:</label>
-        <select
-          value={form.role}
-          onChange={(e) => setForm({ ...form, role: e.target.value })}
-          required
-          style={{ width: "100%", padding: 8, marginBottom: 15 }}
-        >
-          <option value="">Select role</option>
-          <option value="farmer">Farmer</option>
-          <option value="master">Master Station</option>
-        </select>
+      <div className="auth-card">
+        <h2>Dashboard Login</h2>
 
-        {/* Username (optional) */}
-        <label>Username (optional):</label>
-        <input
-          type="text"
-          placeholder="Enter username"
-          value={form.username}
-          onChange={(e) => setForm({ ...form, username: e.target.value })}
-          style={{ width: "100%", padding: 8, marginBottom: 15 }}
-        />
+        <form onSubmit={handleLogin}>
+          <input
+            type="email"
+            placeholder="Email address"
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
 
-        {/* Password */}
-        <label>Password:</label>
-        <input
-          type="password"
-          placeholder="Enter password"
-          value={form.password}
-          onChange={(e) => setForm({ ...form, password: e.target.value })}
-          required
-          style={{ width: "100%", padding: 8, marginBottom: 15 }}
-        />
+          <input
+            type="password"
+            placeholder="Password"
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
 
-        {/* Device ID */}
-        <label>Device ID:</label>
-        <input
-          type="text"
-          placeholder="Enter Device ID"
-          value={form.deviceId}
-          onChange={(e) => setForm({ ...form, deviceId: e.target.value })}
-          required
-          style={{ width: "100%", padding: 8, marginBottom: 20 }}
-        />
+          <button type="submit">Login</button>
+        </form>
 
-        {/* Login button */}
-        <button
-          type="submit"
-          style={{
-            width: "100%",
-            padding: 10,
-            backgroundColor: "#2E7D32",
-            color: "white",
-            border: "none",
-            borderRadius: 5,
-            fontSize: 16,
-            cursor: "pointer",
-          }}
-        >
-          Login
-        </button>
+        {error && <p className="error-text">{error}</p>}
 
-        {/* Error message */}
-        {error && <p style={{ color: "red", marginTop: 10 }}>{error}</p>}
-      </form>
+        <p className="switch-text">
+          New user? <Link to="/register">Create Account</Link>
+        </p>
+
+      </div>
     </div>
   );
 };
